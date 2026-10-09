@@ -1,9 +1,9 @@
 # Caddy on the VPS: asks for the password and forwards everything to app.py on the boat,
-# through the WireGuard tunnel. `make password` fills in the login and password hash and
-# installs it as /etc/caddy/Caddyfile.
-# Got a domain later? Replace :80 with the domain name, open 443/tcp, run `make password`,
-# and Caddy fetches an HTTPS certificate by itself.
-:80 {
+# through the WireGuard tunnel. `make password` fills in the site, login and password hash
+# and installs it as /etc/caddy/Caddyfile.
+# The site is the domain (HTTPS: Caddy fetches and renews the certificate by itself),
+# or :80 (plain HTTP on the IP) if no domain is set.
+@SITE@ {
 	basic_auth {
 		@LOGIN@ @HASH@
 	}

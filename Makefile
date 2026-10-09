@@ -1,7 +1,9 @@
 # The VPS between the PC and the boat. Run on the VPS (Debian/Ubuntu): make install
 # The Pi connects out to here with WireGuard (tunnel: VPS 10.88.0.1, Pi 10.88.0.2), and Caddy
-# on port 80 asks for a password and forwards everything to app.py on the Pi. See README.md.
+# asks for a password and forwards everything to app.py on the Pi. See README.md.
+# Another domain: make install DOMAIN=<domain> (remembered in .domain).
 LOGIN = boat
+DOMAIN ?= $(or $(shell cat .domain 2>/dev/null),boat.tomasa.cloud)
 IP ?= $(shell curl -4 -fsS --max-time 5 https://api.ipify.org)
 SUDO = $(if $(filter 0,$(shell id -u)),,sudo)
 KEYS = keys/vps.key keys/vps.pub keys/pi.key keys/pi.pub
@@ -14,7 +16,7 @@ install: $(KEYS) | /usr/bin/caddy
 	$(SUDO) systemctl restart wg-quick@boat
 	$(SUDO) install -D -m 644 offline.html /var/www/boat/offline.html
 	if command -v ufw >/dev/null && $(SUDO) ufw status | grep -q "Status: active"; then \
-	    $(SUDO) ufw allow 80/tcp && $(SUDO) ufw allow 51820/udp; fi
+	    $(SUDO) ufw allow 80/tcp && $(SUDO) ufw allow 443/tcp && $(SUDO) ufw allow 51820/udp; fi
 	$(MAKE) --no-print-directory password
 	@echo "Done. Next: run 'make pi' and put the output on the Pi (see README.md)."
 
@@ -23,12 +25,15 @@ pi: $(KEYS)
 	@ip="$(IP)"; test -n "$$ip" || { echo "Could not find this VPS's public IP. Use: make pi IP=<ip>" >&2; exit 1; }; \
 	sed -e "s|@PI_KEY@|$$(cat keys/pi.key)|" -e "s|@VPS_PUB@|$$(cat keys/vps.pub)|" -e "s|@IP@|$$ip|" wg-pi.conf
 
-# Asks for a new password (twice) and reloads Caddy.
+# Asks for a new password (twice) and reloads Caddy. Also used to change the domain:
+# make password DOMAIN=<domain>
 password: | /usr/bin/caddy
+	@echo "$(DOMAIN)" > .domain
 	@hash=$$(caddy hash-password) && \
-	sed -e "s|@LOGIN@|$(LOGIN)|" -e "s|@HASH@|$$hash|" Caddyfile | $(SUDO) tee /etc/caddy/Caddyfile >/dev/null && \
+	sed -e "s|@SITE@|$(or $(DOMAIN),:80)|" -e "s|@LOGIN@|$(LOGIN)|" -e "s|@HASH@|$$hash|" Caddyfile \
+	    | $(SUDO) tee /etc/caddy/Caddyfile >/dev/null && \
 	$(SUDO) systemctl reload-or-restart caddy && \
-	echo "Password set. Log in as '$(LOGIN)'."
+	echo "Password set. Open $(if $(DOMAIN),https://$(DOMAIN),http://<vps-ip>) and log in as '$(LOGIN)'."
 
 status:
 	-$(SUDO) wg show boat

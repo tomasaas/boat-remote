@@ -1,3 +1,7 @@
+# Made on the VPS by `make install`: WireGuard keys and the remembered domain
+keys/
+.domain
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
