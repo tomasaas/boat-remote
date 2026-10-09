@@ -1,0 +1,18 @@
+# Caddy on the VPS: asks for the password and forwards everything to app.py on the boat,
+# through the WireGuard tunnel. `make password` fills in the login and password hash and
+# installs it as /etc/caddy/Caddyfile.
+# Got a domain later? Replace :80 with the domain name, open 443/tcp, run `make password`,
+# and Caddy fetches an HTTPS certificate by itself.
+:80 {
+	basic_auth {
+		@LOGIN@ @HASH@
+	}
+	reverse_proxy 10.88.0.2:8000
+
+	# The boat doesn't answer: Pi off, no 4G, tunnel down, or app.py not running.
+	handle_errors 502 503 504 {
+		root * /var/www/boat
+		rewrite * /offline.html
+		file_server
+	}
+}
