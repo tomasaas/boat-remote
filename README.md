@@ -44,6 +44,7 @@ Ingenting i `boat` må endres: `app.py` lytter allerede på alle nettverkskort, 
 | `make pi` | WireGuard-oppsett for Pi-en. Inneholder Pi-ens private nøkkel. `make pi IP=<vps-ip>` hvis IP-en ikke finnes automatisk. |
 | `make password` | Nytt passord. `make password DOMAIN=<nytt-domene>` bytter domene. |
 | `make status` | Tunnelen (`latest handshake`) og om `app.py` på båten svarer. |
+| `make caddy` | Oppdaterer Caddy til nyeste versjon (fra GitHub). |
 | `make uninstall` | Stopper tunnelen og Caddy. |
 
 **SSH til Pi-en fra hvor som helst**, f.eks. for `git pull`: `ssh -J <bruker>@<vps-ip> <pi-bruker>@10.88.0.2`

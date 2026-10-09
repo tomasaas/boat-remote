@@ -51,20 +51,19 @@ keys/%.pub: keys/%.key
 	$(SUDO) apt-get update
 	$(SUDO) apt-get install -y wireguard-tools
 
-# Caddy from its own apt repo: the one in Debian/Ubuntu is too old for this Caddyfile.
 /usr/bin/caddy:
-	$(SUDO) apt-get update
-	$(SUDO) apt-get install -y curl gnupg
-	curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key \
-	    | $(SUDO) gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-	curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt \
-	    | $(SUDO) tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null
-	$(SUDO) chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
-	$(SUDO) apt-get update
-	$(SUDO) apt-get install -y caddy
+	$(MAKE) --no-print-directory caddy
+
+# The newest Caddy .deb from GitHub (the one in Debian/Ubuntu is too old for this Caddyfile,
+# and Caddy's apt repo on Cloudsmith answers 402). Run again to update Caddy.
+caddy:
+	url=$$(curl -fsSL https://api.github.com/repos/caddyserver/caddy/releases/latest \
+	    | grep -o "https://[^\"]*_linux_$$(dpkg --print-architecture)\.deb" | head -1) && \
+	test -n "$$url" && curl -fsSL -o /tmp/caddy.deb "$$url" && \
+	$(SUDO) apt-get install -y /tmp/caddy.deb && rm -f /tmp/caddy.deb
 
 uninstall:
 	-$(SUDO) systemctl disable --now wg-quick@boat caddy
 	$(SUDO) rm -rf /etc/wireguard/boat.conf /var/www/boat
 
-.PHONY: install pi password status uninstall
+.PHONY: install pi password status caddy uninstall
