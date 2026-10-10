@@ -70,7 +70,7 @@ Ingenting i `boat` må endres: `app.py` lytter allerede på alle nettverkskort, 
 
 ## Data over 4G
 
-Kameraet går gjennom samme tunnel og passord. Det bruker data bare når videoen vises, og *Skru av kamera* i GUI-en stopper det helt. Oppløsning, fps og bitrate stilles under Konfigurasjon. Se [boat](https://github.com/tomasaas/boat) for en tabell over databruk.
+Kameraet går gjennom samme tunnel og passord. Det bruker data bare når videoen vises, og *Skru av kamera* i GUI-en stopper det helt. Oppløsning og fps stilles under Konfigurasjon, og der står også hvor mange GB per time valget bruker. Se [boat](https://github.com/tomasaas/boat) for en tabell over databruk.
 
 `sudo wg show boat transfer` på VPS-en viser hvor mye som faktisk har gått gjennom tunnelen siden den startet. Kjør den to ganger med et minutt imellom for å måle, f.eks. med kameraet på og av.
 
