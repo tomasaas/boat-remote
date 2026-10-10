@@ -1,6 +1,6 @@
 # boat-remote
 
-VPS-en som lar PC-en og båten møtes på internett. Pi-en på båten kobler seg ut til VPS-en med **WireGuard** og holder tunnelen åpen. PC-en åpner **https://boat.tomasa.cloud** i nettleseren, skriver passord, og **Caddy** sender alt videre gjennom tunnelen til `app.py` på Pi-en ([boat](https://github.com/tomasaas/boat)). Du får samme GUI som hjemme: styring, konfigurasjon og kobling.
+VPS-en som lar PC-en og båten møtes på internett. Pi-en på båten kobler seg ut til VPS-en med **WireGuard** og holder tunnelen åpen. PC-en åpner **https://boat.tomasa.cloud** i nettleseren, skriver passord, og **Caddy** sender alt videre gjennom tunnelen til `app.py` på Pi-en ([boat](https://github.com/tomasaas/boat)). Du får samme GUI som hjemme: styring, kamera, konfigurasjon og kobling.
 
 ```
 PC (nettleser) ──HTTPS + passord──▶ VPS: Caddy :443 ──WireGuard──▶ Pi: app.py :8000
@@ -67,6 +67,12 @@ Ingenting i `boat` må endres: `app.py` lytter allerede på alle nettverkskort, 
 - **Passordet** sjekkes av Caddy før noe slipper gjennom.
 - `app.py` har ingen innlogging. Gjennom tunnelen er det bare VPS-en som når den.
 - Mister båten 4G, stopper motorene etter 0,5 s (watchdogen i `app.py`).
+
+## Data over 4G
+
+Kameraet går gjennom samme tunnel og passord. Det bruker data bare når videoen vises, og *Skru av kamera* i GUI-en stopper det helt. Oppløsning, fps og bitrate stilles under Konfigurasjon. Se [boat](https://github.com/tomasaas/boat) for en tabell over databruk.
+
+`sudo wg show boat transfer` på VPS-en viser hvor mye som faktisk har gått gjennom tunnelen siden den startet. Kjør den to ganger med et minutt imellom for å måle, f.eks. med kameraet på og av.
 
 ## Feilsøking
 

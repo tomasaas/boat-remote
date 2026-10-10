@@ -7,7 +7,10 @@
 	basic_auth {
 		@LOGIN@ @HASH@
 	}
-	reverse_proxy 10.88.0.2:8000
+	reverse_proxy 10.88.0.2:8000 {
+		# Pass the camera's video (/video) on at once, frame by frame, instead of buffering it.
+		flush_interval -1
+	}
 
 	# The boat doesn't answer: Pi off, no 4G, tunnel down, or app.py not running.
 	handle_errors 502 503 504 {
