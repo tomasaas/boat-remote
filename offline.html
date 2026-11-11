@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Caddy shows this when the boat doesn't answer. Reloads every 5 s, so the GUI appears by itself. -->
-<meta http-equiv="refresh" content="5">
+<!-- Caddy shows this when the boat doesn't answer. -->
 <title>Båt</title>
 <style>
   :root { --bg: #f6f7f9; --card: #fff; --text: #1b1f24; --muted: #6b7280; --line: #e3e6ea; --rev: #dc2626; }
@@ -23,6 +22,8 @@
   code { font-size: 13px; }
   ul { margin: 0; padding-left: 20px; }
   li { margin: 4px 0; }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin: 8px 0; overflow-x: auto; }
+  button { font: inherit; padding: 6px 18px; margin-right: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); cursor: pointer; }
 </style>
 </head>
 <body>
@@ -30,13 +31,81 @@
   <header><h1>Båt</h1><span id="conn">Ikke tilkoblet</span></header>
   <div class="card">
     <h2>Får ikke kontakt med båten</h2>
-    <p class="note">VPS-en er oppe, men båten svarer ikke. Siden prøver igjen hvert 5. sekund.</p>
-    <ul>
-      <li>Er Pi-en slått på, og har 4G-ruteren dekning?</li>
-      <li>Er tunnelen oppe? På VPS-en: <code>make status</code>. På Pi-en: <code>sudo wg show</code>.</li>
-      <li>Kjører appen? På Pi-en: <code>journalctl -u boat -f</code>.</li>
-    </ul>
+    <p class="note">VPS-en er oppe, men båten svarer ikke. Siden sjekker hvert 5. sekund og viser GUI-en når båten svarer igjen.</p>
+    <p>Bruk SSH for å feilsøke: logg inn på VPS-en, og derfra videre til Pi-en gjennom tunnelen.</p>
   </div>
+
+  <section class="card" id="ssh">
+    <h2>1. Får du kontakt med Pi-en over SSH?</h2>
+    <p class="note">På VPS-en:</p>
+    <pre>ssh admin@10.88.0.2</pre>
+    <button data-go="app">Ja</button><button data-go="down">Nei</button>
+  </section>
+  <section class="card" id="down" hidden>
+    <h2>Tunnelen eller Pi-en er nede</h2>
+    <p>Har Pi-en strøm? Har den nett (WiFi eller mobil)? Se når siste håndtrykk var, på VPS-en:</p>
+    <pre>sudo wg show</pre>
+    <p>Er det mer enn 3 minutter siden, er det Pi-en som ikke kommer ut på nett.</p>
+  </section>
+
+  <section class="card" id="app" hidden>
+    <h2>2. Kjører appen?</h2>
+    <pre>systemctl status boat</pre>
+    <button data-go="local">Ja</button><button data-go="crashed">Nei</button>
+  </section>
+  <section class="card" id="crashed" hidden>
+    <h2>Appen har stoppet</h2>
+    <p>Se feilmeldingen:</p>
+    <pre>journalctl -u boat -n 50</pre>
+    <p>Start igjen:</p>
+    <pre>sudo systemctl restart boat</pre>
+  </section>
+
+  <section class="card" id="local" hidden>
+    <h2>3. Svarer den lokalt?</h2>
+    <pre>curl localhost:8000</pre>
+    <button data-go="edited">Ja</button><button data-go="hung">Nei</button>
+  </section>
+  <section class="card" id="hung" hidden>
+    <h2>Appen henger</h2>
+    <p>Start den på nytt:</p>
+    <pre>sudo systemctl restart boat</pre>
+  </section>
+
+  <section class="card" id="edited" hidden>
+    <h2>4. Har du endret .py-filer siden siste omstart?</h2>
+    <button data-go="sync">Ja</button><button data-go="power">Nei</button>
+  </section>
+  <section class="card" id="sync" hidden>
+    <h2>Koden og siden er i utakt</h2>
+    <p>Start på nytt, og sjekk deretter <code>config.json</code>.</p>
+    <pre>sudo systemctl restart boat</pre>
+  </section>
+
+  <section class="card" id="power" hidden>
+    <h2>5. Viser denne noe annet enn <code>throttled=0x0</code>?</h2>
+    <pre>vcgencmd get_throttled</pre>
+    <button data-go="weak">Ja</button><button data-go="unknown">Nei</button>
+  </section>
+  <section class="card" id="weak" hidden>
+    <h2>Underspenning</h2>
+    <p>Strømforsyningen eller batteriet er for svakt.</p>
+  </section>
+  <section class="card" id="unknown" hidden>
+    <h2>Pi-en svarer lokalt, men ikke gjennom tunnelen</h2>
+    <p>På VPS-en:</p>
+    <pre>curl 10.88.0.2:8000
+journalctl -u caddy -n 50</pre>
+  </section>
+
+  <button data-go="ssh">Start på nytt</button>
 </main>
+<script>
+  // Clicking Ja/Nei shows the next step. A meta refresh would reset it, so poll instead:
+  // Caddy serves this page with a 502, so a 2xx on / means the boat is back.
+  const show = id => document.querySelectorAll('section').forEach(s => s.hidden = s.id !== id);
+  document.onclick = e => e.target.dataset.go && show(e.target.dataset.go);
+  setInterval(() => fetch('/', { cache: 'no-store' }).then(r => r.ok && location.reload(), () => {}), 5000);
+</script>
 </body>
 </html>
